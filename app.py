@@ -205,20 +205,20 @@ def make_excel(class_name, num, start_week, num_weeks):
     ws_nm.merge_cells("A1:B1")
     c = ws_nm["A1"]
     c.value = f"{class_name}　名前入力（出席番号順・{num}人）"
-    c.font  = mf(11, True)
-    c.fill  = fl("E8E8E8")
+    c.font  = mf(11, True, "1A1A1A")
+    c.fill  = fl("D6EAF8")
     c.alignment = Alignment(horizontal="left", vertical="center")
     ws_nm.row_dimensions[1].height = 26
 
-    put(ws_nm, 2, 1, "番号", bg=C_MID, ft=mf(10, True, "FFFFFF"))
-    put(ws_nm, 2, 2, "名前", bg=C_MID, ft=mf(10, True, "FFFFFF"))
+    put(ws_nm, 2, 1, "番号", bg="2471A3", ft=mf(10, True, "FFFFFF"))
+    put(ws_nm, 2, 2, "名前", bg="2471A3", ft=mf(10, True, "FFFFFF"))
     ws_nm.row_dimensions[2].height = 20
 
     for n in range(1, num + 1):
         r = 2 + n
         ws_nm.row_dimensions[r].height = 18
-        put(ws_nm, r, 1, n,  bg=C_STRIPE if n % 2 == 0 else C_WHITE, ft=mf(10))
-        put(ws_nm, r, 2, "", bg=C_STRIPE if n % 2 == 0 else C_WHITE, ft=mf(11))
+        put(ws_nm, r, 1, n,  bg="EBF5FB" if n % 2 == 0 else "FFFFFF", ft=mf(10))
+        put(ws_nm, r, 2, "", bg="EBF5FB" if n % 2 == 0 else "FFFFFF", ft=mf(11))
 
     # ── 当番表シート ─────────────────────────────
     ws = wb.create_sheet("当番表")
@@ -272,32 +272,32 @@ def make_excel(class_name, num, start_week, num_weeks):
                        end_row=r_title,   end_column=C_NM2)
         c = ws.cell(row=r_title, column=C_KY,
                     value=f"第 {week} 週　　{class_name}　給食・そうじ当番")
-        c.font  = mf(12, True, "FFFFFF")
-        c.fill  = fl(C_DARK)
+        c.font  = mf(13, True, C_BLACK)
+        c.fill  = fl(C_WHITE)
         c.alignment = Alignment(horizontal="center", vertical="center")
         c.border = bdr_t
 
         # ヘッダー1段目
-        put(ws, r_hdr1, C_KY, "給食当番", bg=C_MID, ft=mf(9, True, "FFFFFF"))
+        put(ws, r_hdr1, C_KY, "給食当番", bg=C_WHITE, ft=mf(9, True, C_BLACK))
         ws.merge_cells(start_row=r_hdr1, start_column=C_SJ1,
                        end_row=r_hdr1,   end_column=C_SJ2)
         c = ws.cell(row=r_hdr1, column=C_SJ1, value="そうじ当番")
-        c.font = mf(9, True, "FFFFFF"); c.fill = fl(C_MID)
+        c.font = mf(9, True, C_BLACK); c.fill = fl(C_WHITE)
         c.alignment = Alignment(horizontal="center", vertical="center")
         c.border = bdr
         ws.merge_cells(start_row=r_hdr1, start_column=C_NM1,
                        end_row=r_hdr1,   end_column=C_NM2)
         c = ws.cell(row=r_hdr1, column=C_NM1, value="名前")
-        c.font = mf(9, True, "FFFFFF"); c.fill = fl(C_MID)
+        c.font = mf(9, True, C_BLACK); c.fill = fl(C_WHITE)
         c.alignment = Alignment(horizontal="center", vertical="center")
         c.border = bdr
 
         # ヘッダー2段目
-        put(ws, r_hdr2, C_KY,  "係",       bg=C_LGRAY, ft=mf(9, True))
-        put(ws, r_hdr2, C_SJ1, "場所",     bg=C_LGRAY, ft=mf(9, True))
-        put(ws, r_hdr2, C_SJ2, "仕事内容", bg=C_LGRAY, ft=mf(9, True))
-        put(ws, r_hdr2, C_NM1, f"①  1〜{HALF}番",      bg=C_LGRAY, ft=mf(8, True))
-        put(ws, r_hdr2, C_NM2, f"②  {HALF+1}〜{num}番", bg=C_LGRAY, ft=mf(8, True))
+        put(ws, r_hdr2, C_KY,  "係",       bg=C_WHITE, ft=mf(9, True, C_BLACK))
+        put(ws, r_hdr2, C_SJ1, "場所",     bg=C_WHITE, ft=mf(9, True, C_BLACK))
+        put(ws, r_hdr2, C_SJ2, "仕事内容", bg=C_WHITE, ft=mf(9, True, C_BLACK))
+        put(ws, r_hdr2, C_NM1, f"①  1〜{HALF}番",      bg=C_WHITE, ft=mf(8, True, C_BLACK))
+        put(ws, r_hdr2, C_NM2, f"②  {HALF+1}〜{num}番", bg=C_WHITE, ft=mf(8, True, C_BLACK))
 
         # データ行
         shift = week - 1
