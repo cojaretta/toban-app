@@ -276,21 +276,29 @@ def make_excel(class_name, num, start_week, num_weeks):
         c.fill  = fl(C_WHITE)
         c.alignment = Alignment(horizontal="center", vertical="center")
         c.border = bdr_t
+        # 結合右端セルにも右罫線を設定
+        ws.cell(row=r_title, column=C_NM2).border = Border(right=med, top=med, bottom=thin)
 
         # ヘッダー1段目
         put(ws, r_hdr1, C_KY, "給食当番", bg=C_WHITE, ft=mf(9, True, C_BLACK))
+
         ws.merge_cells(start_row=r_hdr1, start_column=C_SJ1,
                        end_row=r_hdr1,   end_column=C_SJ2)
         c = ws.cell(row=r_hdr1, column=C_SJ1, value="そうじ当番")
         c.font = mf(9, True, C_BLACK); c.fill = fl(C_WHITE)
         c.alignment = Alignment(horizontal="center", vertical="center")
-        c.border = bdr
+        c.border = Border(left=thin, right=thin, top=thin, bottom=thin)
+        # 結合右端セルにも右罫線を設定
+        ws.cell(row=r_hdr1, column=C_SJ2).border = Border(right=thin, top=thin, bottom=thin)
+
         ws.merge_cells(start_row=r_hdr1, start_column=C_NM1,
                        end_row=r_hdr1,   end_column=C_NM2)
         c = ws.cell(row=r_hdr1, column=C_NM1, value="名前")
         c.font = mf(9, True, C_BLACK); c.fill = fl(C_WHITE)
         c.alignment = Alignment(horizontal="center", vertical="center")
-        c.border = bdr
+        c.border = Border(left=thin, right=thin, top=thin, bottom=thin)
+        # 結合右端セルにも右罫線を設定
+        ws.cell(row=r_hdr1, column=C_NM2).border = Border(right=thin, top=thin, bottom=thin)
 
         # ヘッダー2段目
         put(ws, r_hdr2, C_KY,  "係",       bg=C_WHITE, ft=mf(9, True, C_BLACK))
