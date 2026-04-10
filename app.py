@@ -155,8 +155,8 @@ HTML = """
 
   <div class="note">
     <strong>ダウンロード後にExcelで入力するもの</strong><br>
+    ・係名シート：給食当番・そうじ場所・仕事内容を入力（全週に自動反映）<br>
     ・名前シート：名前を入力<br>
-    ・当番表：給食当番・そうじ場所・仕事内容を入力<br>
     ・②列のヘッダーは自由に書き換えOK（例：給食当番おやすみ）
   </div>
 </div>
@@ -196,7 +196,59 @@ def make_excel(class_name, num, start_week, num_weeks):
     wb = Workbook()
     wb.remove(wb.active)
 
-    # ── 名前シート ──────────────────────────────
+    # ── 係名シート（カラフル）──────────────────────
+    ws_ky = wb.create_sheet("係名")
+    ws_ky.sheet_view.showGridLines = False
+    ws_ky.column_dimensions["A"].width = 14
+    ws_ky.column_dimensions["B"].width = 14
+    ws_ky.column_dimensions["C"].width = 16
+    ws_ky.column_dimensions["D"].width = 4
+
+    # タイトル
+    ws_ky.merge_cells("A1:C1")
+    c = ws_ky["A1"]
+    c.value = f"🍱  係名入力シート　― {class_name} ―"
+    c.font  = mf(12, True, "FFFFFF")
+    c.fill  = fl("E74C3C")
+    c.alignment = Alignment(horizontal="left", vertical="center")
+    ws_ky.row_dimensions[1].height = 30
+
+    # 説明
+    ws_ky.merge_cells("A2:C2")
+    c = ws_ky["A2"]
+    c.value = "★ ここに係名を入力すると、当番表の全週に自動反映されます"
+    c.font  = mf(9, color="E74C3C")
+    c.fill  = fl("FDEDEC")
+    c.alignment = Alignment(horizontal="left", vertical="center")
+    ws_ky.row_dimensions[2].height = 18
+
+    # 列ヘッダー
+    headers = [("給食当番", "E74C3C"), ("そうじ場所", "2471A3"), ("そうじ仕事内容", "1E8449")]
+    for ci, (label, color) in enumerate(headers):
+        c = ws_ky.cell(row=3, column=ci+1, value=label)
+        c.font = mf(10, True, "FFFFFF")
+        c.fill = fl(color)
+        c.alignment = Alignment(horizontal="center", vertical="center")
+        c.border = bdr
+    ws_ky.row_dimensions[3].height = 22
+
+    # データ行（HALF行分）
+    bg_pairs = [
+        ("FDEDEC", "D6EAF8", "D5F5E3"),  # 偶数行
+        ("FFFFFF", "FFFFFF", "FFFFFF"),   # 奇数行
+    ]
+    for i in range(HALF):
+        r = 4 + i
+        ws_ky.row_dimensions[r].height = 18
+        bgs = bg_pairs[i % 2]
+        for ci, bg in enumerate(bgs):
+            c = ws_ky.cell(row=r, column=ci+1, value="")
+            c.fill = fl(bg)
+            c.font = mf(10)
+            c.alignment = Alignment(horizontal="left", vertical="center")
+            c.border = bdr
+
+    # ── 名前シート（カラフル）──────────────────────
     ws_nm = wb.create_sheet("名前")
     ws_nm.sheet_view.showGridLines = False
     ws_nm.column_dimensions["A"].width = 5
@@ -204,21 +256,31 @@ def make_excel(class_name, num, start_week, num_weeks):
 
     ws_nm.merge_cells("A1:B1")
     c = ws_nm["A1"]
-    c.value = f"{class_name}　名前入力（出席番号順・{num}人）"
-    c.font  = mf(11, True, "1A1A1A")
-    c.fill  = fl("D6EAF8")
+    c.value = f"👤  名前入力　― {class_name}・{num}人 ―"
+    c.font  = mf(11, True, "FFFFFF")
+    c.fill  = fl("8E44AD")
     c.alignment = Alignment(horizontal="left", vertical="center")
-    ws_nm.row_dimensions[1].height = 26
+    ws_nm.row_dimensions[1].height = 30
 
-    put(ws_nm, 2, 1, "番号", bg="2471A3", ft=mf(10, True, "FFFFFF"))
-    put(ws_nm, 2, 2, "名前", bg="2471A3", ft=mf(10, True, "FFFFFF"))
-    ws_nm.row_dimensions[2].height = 20
+    ws_nm.merge_cells("A2:B2")
+    c = ws_nm["A2"]
+    c.value = "★ 出席番号順に名前を入力してください"
+    c.font  = mf(9, color="8E44AD")
+    c.fill  = fl("F5EEF8")
+    c.alignment = Alignment(horizontal="left", vertical="center")
+    ws_nm.row_dimensions[2].height = 16
 
+    put(ws_nm, 3, 1, "番号", bg="8E44AD", ft=mf(10, True, "FFFFFF"))
+    put(ws_nm, 3, 2, "名前", bg="8E44AD", ft=mf(10, True, "FFFFFF"))
+    ws_nm.row_dimensions[3].height = 20
+
+    row_colors = ["F5EEF8", "E8DAEF", "D7BDE2", "C39BD3"]
     for n in range(1, num + 1):
-        r = 2 + n
+        r = 3 + n
         ws_nm.row_dimensions[r].height = 18
-        put(ws_nm, r, 1, n,  bg="EBF5FB" if n % 2 == 0 else "FFFFFF", ft=mf(10))
-        put(ws_nm, r, 2, "", bg="EBF5FB" if n % 2 == 0 else "FFFFFF", ft=mf(11))
+        bg = row_colors[n % 4] if n % 2 == 0 else "FFFFFF"
+        put(ws_nm, r, 1, n,  bg=bg, ft=mf(10, bold=True, color="6C3483"))
+        put(ws_nm, r, 2, "", bg=bg, ft=mf(11))
 
     # ── 当番表シート ─────────────────────────────
     ws = wb.create_sheet("当番表")
@@ -308,14 +370,27 @@ def make_excel(class_name, num, start_week, num_weeks):
         put(ws, r_hdr2, C_NM2, f"②  {HALF+1}〜{num}番", bg=C_WHITE, ft=mf(8, True, C_BLACK))
 
         # データ行
+        # 係名シート: A列=給食係, B列=そうじ場所, C列=仕事内容, 行4〜4+HALF-1
+        KY_RANGE  = f"係名!$A$4:$A${3+HALF}"
+        SJ1_RANGE = f"係名!$B$4:$B${3+HALF}"
+        SJ2_RANGE = f"係名!$C$4:$C${3+HALF}"
+
         shift = week - 1
         for i in range(HALF):
-            row   = r_data0 + i
+            row    = r_data0 + i
             row_bg = C_STRIPE if i % 2 == 0 else C_WHITE
 
-            put(ws, row, C_KY,  "", bg=row_bg, ft=mf(10))
-            put(ws, row, C_SJ1, "", bg=row_bg, ft=mf(10))
-            put(ws, row, C_SJ2, "", bg=row_bg, ft=mf(10))
+            # 給食係・掃除係は係名シートから参照
+            for formula, col in [
+                (f"=IFERROR(INDEX({KY_RANGE},{i+1}),\"\")",  C_KY),
+                (f"=IFERROR(INDEX({SJ1_RANGE},{i+1}),\"\")", C_SJ1),
+                (f"=IFERROR(INDEX({SJ2_RANGE},{i+1}),\"\")", C_SJ2),
+            ]:
+                c = ws.cell(row=row, column=col, value=formula)
+                c.font      = mf(10)
+                c.fill      = fl(row_bg)
+                c.alignment = Alignment(horizontal="center", vertical="center")
+                c.border    = bdr
 
             f1 = f"=IFERROR(INDEX({NM_RANGE},MOD({shift}+{i},{num})+1),\"\")"
             f2 = (f"=IFERROR(INDEX({NM_RANGE},MOD({shift}+{HALF}+{i},{num})+1),\"\")"
