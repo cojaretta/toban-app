@@ -155,8 +155,8 @@ HTML = """
 
   <div class="note">
     <strong>ダウンロード後にExcelで入力するもの</strong><br>
-    ・名前シート：出席番号順に名前を入力<br>
-    ・当番表：給食係・そうじ場所・仕事内容の係名<br>
+    ・名前シート：名前を入力<br>
+    ・当番表：給食当番・そうじ場所・仕事内容を入力<br>
     ・②列のヘッダーは自由に書き換えOK（例：給食当番おやすみ）
   </div>
 </div>
@@ -168,20 +168,18 @@ def make_excel(class_name, num, start_week, num_weeks):
     HALF  = math.ceil(num / 2)
     HALF2 = num - HALF
 
-    C_KY_H  = "2471A3"
-    C_KY_L0 = "D6EAF8"
-    C_KY_L1 = "EBF5FB"
-    C_SJ_H  = "1E8449"
-    C_SJ_L0 = "D5F5E3"
-    C_SJ_L1 = "EAFAF1"
-    C_NM_H  = "6C3483"
-    C_NM_L  = "F5EEF8"
-    C_WK_BG = "17202A"
-    C_BORDER= "AAAAAA"
+    # モノクロ配色
+    C_BLACK  = "000000"
+    C_DARK   = "333333"   # タイトル背景
+    C_MID    = "666666"   # ヘッダー背景
+    C_LGRAY  = "CCCCCC"   # ヘッダー2段目背景
+    C_STRIPE = "F0F0F0"   # データ行ストライプ
+    C_WHITE  = "FFFFFF"
+    C_BORDER = "888888"
 
-    thin = Side(style="thin",   color=C_BORDER)
-    med  = Side(style="medium", color="666666")
-    bdr  = Border(left=thin, right=thin, top=thin, bottom=thin)
+    thin  = Side(style="thin",   color=C_BORDER)
+    med   = Side(style="medium", color=C_BLACK)
+    bdr   = Border(left=thin, right=thin, top=thin, bottom=thin)
     bdr_t = Border(left=med, right=med, top=med, bottom=thin)
 
     def mf(sz=10, bold=False, color="000000"):
@@ -208,19 +206,19 @@ def make_excel(class_name, num, start_week, num_weeks):
     c = ws_nm["A1"]
     c.value = f"{class_name}　名前入力（出席番号順・{num}人）"
     c.font  = mf(11, True)
-    c.fill  = fl("D6EAF8")
+    c.fill  = fl("E8E8E8")
     c.alignment = Alignment(horizontal="left", vertical="center")
     ws_nm.row_dimensions[1].height = 26
 
-    put(ws_nm, 2, 1, "番号", bg=C_KY_H, ft=mf(10, True, "FFFFFF"))
-    put(ws_nm, 2, 2, "名前", bg=C_KY_H, ft=mf(10, True, "FFFFFF"))
+    put(ws_nm, 2, 1, "番号", bg=C_MID, ft=mf(10, True, "FFFFFF"))
+    put(ws_nm, 2, 2, "名前", bg=C_MID, ft=mf(10, True, "FFFFFF"))
     ws_nm.row_dimensions[2].height = 20
 
     for n in range(1, num + 1):
         r = 2 + n
         ws_nm.row_dimensions[r].height = 18
-        put(ws_nm, r, 1, n,  bg="F2F3F4", ft=mf(10))
-        put(ws_nm, r, 2, "", bg="FFFFFF", ft=mf(11))
+        put(ws_nm, r, 1, n,  bg=C_STRIPE if n % 2 == 0 else C_WHITE, ft=mf(10))
+        put(ws_nm, r, 2, "", bg=C_STRIPE if n % 2 == 0 else C_WHITE, ft=mf(11))
 
     # ── 当番表シート ─────────────────────────────
     ws = wb.create_sheet("当番表")
@@ -275,43 +273,41 @@ def make_excel(class_name, num, start_week, num_weeks):
         c = ws.cell(row=r_title, column=C_KY,
                     value=f"第 {week} 週　　{class_name}　給食・そうじ当番")
         c.font  = mf(12, True, "FFFFFF")
-        c.fill  = fl(C_WK_BG)
+        c.fill  = fl(C_DARK)
         c.alignment = Alignment(horizontal="center", vertical="center")
         c.border = bdr_t
 
         # ヘッダー1段目
-        put(ws, r_hdr1, C_KY, "給食当番", bg=C_KY_H, ft=mf(9, True, "FFFFFF"))
+        put(ws, r_hdr1, C_KY, "給食当番", bg=C_MID, ft=mf(9, True, "FFFFFF"))
         ws.merge_cells(start_row=r_hdr1, start_column=C_SJ1,
                        end_row=r_hdr1,   end_column=C_SJ2)
         c = ws.cell(row=r_hdr1, column=C_SJ1, value="そうじ当番")
-        c.font = mf(9, True, "FFFFFF"); c.fill = fl(C_SJ_H)
+        c.font = mf(9, True, "FFFFFF"); c.fill = fl(C_MID)
         c.alignment = Alignment(horizontal="center", vertical="center")
         c.border = bdr
         ws.merge_cells(start_row=r_hdr1, start_column=C_NM1,
                        end_row=r_hdr1,   end_column=C_NM2)
         c = ws.cell(row=r_hdr1, column=C_NM1, value="名前")
-        c.font = mf(9, True, "FFFFFF"); c.fill = fl(C_NM_H)
+        c.font = mf(9, True, "FFFFFF"); c.fill = fl(C_MID)
         c.alignment = Alignment(horizontal="center", vertical="center")
         c.border = bdr
 
         # ヘッダー2段目
-        put(ws, r_hdr2, C_KY,  "係",       bg=C_KY_H, ft=mf(9, True, "FFFFFF"))
-        put(ws, r_hdr2, C_SJ1, "場所",     bg=C_SJ_H, ft=mf(9, True, "FFFFFF"))
-        put(ws, r_hdr2, C_SJ2, "仕事内容", bg=C_SJ_H, ft=mf(9, True, "FFFFFF"))
-        put(ws, r_hdr2, C_NM1, f"①  1〜{HALF}番",      bg=C_NM_H, ft=mf(8, True, "FFFFFF"))
-        put(ws, r_hdr2, C_NM2, f"②  {HALF+1}〜{num}番", bg=C_NM_H, ft=mf(8, True, "FFFFFF"))
+        put(ws, r_hdr2, C_KY,  "係",       bg=C_LGRAY, ft=mf(9, True))
+        put(ws, r_hdr2, C_SJ1, "場所",     bg=C_LGRAY, ft=mf(9, True))
+        put(ws, r_hdr2, C_SJ2, "仕事内容", bg=C_LGRAY, ft=mf(9, True))
+        put(ws, r_hdr2, C_NM1, f"①  1〜{HALF}番",      bg=C_LGRAY, ft=mf(8, True))
+        put(ws, r_hdr2, C_NM2, f"②  {HALF+1}〜{num}番", bg=C_LGRAY, ft=mf(8, True))
 
         # データ行
         shift = week - 1
         for i in range(HALF):
             row   = r_data0 + i
-            ky_bg = C_KY_L0 if i % 2 == 0 else C_KY_L1
-            sj_bg = C_SJ_L0 if i % 2 == 0 else C_SJ_L1
-            nm_bg = C_NM_L  if week % 2 == 1 else "FFFFFF"
+            row_bg = C_STRIPE if i % 2 == 0 else C_WHITE
 
-            put(ws, row, C_KY,  "", bg=ky_bg, ft=mf(10))
-            put(ws, row, C_SJ1, "", bg=sj_bg, ft=mf(10))
-            put(ws, row, C_SJ2, "", bg=sj_bg, ft=mf(10))
+            put(ws, row, C_KY,  "", bg=row_bg, ft=mf(10))
+            put(ws, row, C_SJ1, "", bg=row_bg, ft=mf(10))
+            put(ws, row, C_SJ2, "", bg=row_bg, ft=mf(10))
 
             f1 = f"=IFERROR(INDEX({NM_RANGE},MOD({shift}+{i},{num})+1),\"\")"
             f2 = (f"=IFERROR(INDEX({NM_RANGE},MOD({shift}+{HALF}+{i},{num})+1),\"\")"
@@ -320,13 +316,13 @@ def make_excel(class_name, num, start_week, num_weeks):
             for formula, col in [(f1, C_NM1), (f2, C_NM2)]:
                 c = ws.cell(row=row, column=col, value=formula if formula else "")
                 c.font      = mf(11)
-                c.fill      = fl(nm_bg)
+                c.fill      = fl(row_bg)
                 c.alignment = Alignment(horizontal="center", vertical="center")
                 c.border    = bdr
 
         for r in [r_sep1, r_sep2]:
             for ci in range(C_KY, C_NM2 + 1):
-                ws.cell(row=r, column=ci).fill = fl("E8E8E8")
+                ws.cell(row=r, column=ci).fill = fl("DDDDDD")
 
     buf = io.BytesIO()
     wb.save(buf)
