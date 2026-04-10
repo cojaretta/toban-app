@@ -156,8 +156,7 @@ HTML = """
   <div class="note">
     <strong>ダウンロード後にExcelで入力するもの</strong><br>
     ・係名シート：給食当番・そうじ場所・仕事内容を入力（全週に自動反映）<br>
-    ・名前シート：名前を入力<br>
-    ・②列のヘッダーは自由に書き換えOK（例：給食当番おやすみ）
+    ・名前シート：名前を入力
   </div>
 </div>
 </body>
@@ -335,7 +334,31 @@ def make_excel(class_name, num, start_week, num_weeks):
     ws.page_margins.top    = 0.8 / 2.54
     ws.page_margins.bottom = 0.8 / 2.54
 
-    NM_RANGE = f"名前!$B$3:$B${2 + num}"
+    NM_RANGE  = f"名前!$B$3:$B${2 + num}"
+    KY_RANGE  = f"係名!$A$4:$A${3+HALF}"
+    SJ1_RANGE = f"係名!$B$4:$B${3+HALF}"
+    SJ2_RANGE = f"係名!$C$4:$C${3+HALF}"
+
+    # 罫線定義
+    # t=thin(内側), m=medium(外枠・区切り)
+    T = Side(style="thin",   color=C_BORDER)
+    M = Side(style="medium", color=C_BLACK)
+
+    def cell_bdr(left=T, right=T, top=T, bottom=T):
+        return Border(left=left, right=right, top=top, bottom=bottom)
+
+    # セクション区切り縦線（給食|そうじ|名前の間）は medium
+    # 通常セルの上下左右は thin
+    # 外枠は medium
+
+    def set_row(ws, row, col, val, bg, font, left=T, right=T, top=T, bottom=T):
+        c = ws.cell(row=row, column=col, value=val)
+        c.fill      = fl(bg)
+        c.font      = font
+        c.alignment = Alignment(horizontal="center", vertical="center")
+        c.border    = Border(left=left, right=right, top=top, bottom=bottom)
+        return c
+
     ROWS_PER_WEEK = 1 + 2 + HALF + 2
 
     for wi, week in enumerate(range(start_week, start_week + num_weeks)):
@@ -358,89 +381,103 @@ def make_excel(class_name, num, start_week, num_weeks):
         ws.row_dimensions[r_sep1].height = 5
         ws.row_dimensions[r_sep2].height = 5
 
-        # 週タイトル
+        # ── 週タイトル（全列結合・外枠medium）──
         ws.merge_cells(start_row=r_title, start_column=C_KY,
                        end_row=r_title,   end_column=C_NM2)
         c = ws.cell(row=r_title, column=C_KY,
                     value=f"第 {week} 週　　{class_name}　給食・そうじ当番")
-        c.font  = mf(13, True, C_BLACK)
-        c.fill  = fl(C_WHITE)
+        c.font      = mf(13, True, C_BLACK)
+        c.fill      = fl(C_WHITE)
         c.alignment = Alignment(horizontal="center", vertical="center")
-        c.border = bdr_t
-        # 結合右端セルにも右罫線を設定
-        ws.cell(row=r_title, column=C_NM2).border = Border(right=med, top=med, bottom=thin)
+        c.border    = Border(left=M, right=M, top=M, bottom=T)
+        # 結合内の各セルに右端・左端の罫線を補完
+        for col in range(C_KY+1, C_NM2):
+            ws.cell(row=r_title, column=col).border = Border(top=M, bottom=T)
+        ws.cell(row=r_title, column=C_NM2).border = Border(right=M, top=M, bottom=T)
 
-        # ヘッダー1段目
-        put(ws, r_hdr1, C_KY, "給食当番", bg=C_WHITE, ft=mf(9, True, C_BLACK))
+        # ── ヘッダー1段目（グループ名）──
+        # 給食当番（単独）
+        set_row(ws, r_hdr1, C_KY, "給食当番", C_WHITE, mf(9, True, C_BLACK),
+                left=M, right=M, top=T, bottom=T)
 
+        # そうじ当番（C_SJ1〜C_SJ2 結合）
         ws.merge_cells(start_row=r_hdr1, start_column=C_SJ1,
                        end_row=r_hdr1,   end_column=C_SJ2)
         c = ws.cell(row=r_hdr1, column=C_SJ1, value="そうじ当番")
         c.font = mf(9, True, C_BLACK); c.fill = fl(C_WHITE)
         c.alignment = Alignment(horizontal="center", vertical="center")
-        c.border = Border(left=thin, right=thin, top=thin, bottom=thin)
-        # 結合右端セルにも右罫線を設定
-        ws.cell(row=r_hdr1, column=C_SJ2).border = Border(right=thin, top=thin, bottom=thin)
+        c.border = Border(left=M, right=T, top=T, bottom=T)
+        ws.cell(row=r_hdr1, column=C_SJ2).border = Border(left=T, right=M, top=T, bottom=T)
 
+        # 名前（C_NM1〜C_NM2 結合）
         ws.merge_cells(start_row=r_hdr1, start_column=C_NM1,
                        end_row=r_hdr1,   end_column=C_NM2)
         c = ws.cell(row=r_hdr1, column=C_NM1, value="名前")
         c.font = mf(9, True, C_BLACK); c.fill = fl(C_WHITE)
         c.alignment = Alignment(horizontal="center", vertical="center")
-        c.border = Border(left=thin, right=thin, top=thin, bottom=thin)
-        # 結合右端セルにも右罫線を設定
-        ws.cell(row=r_hdr1, column=C_NM2).border = Border(right=thin, top=thin, bottom=thin)
+        c.border = Border(left=M, right=T, top=T, bottom=T)
+        ws.cell(row=r_hdr1, column=C_NM2).border = Border(left=T, right=M, top=T, bottom=T)
 
-        # ヘッダー2段目
-        put(ws, r_hdr2, C_KY,  "係",       bg=C_WHITE, ft=mf(9, True, C_BLACK))
-        put(ws, r_hdr2, C_SJ1, "場所",     bg=C_WHITE, ft=mf(9, True, C_BLACK))
-        put(ws, r_hdr2, C_SJ2, "仕事内容", bg=C_WHITE, ft=mf(9, True, C_BLACK))
-        # ①②ヘッダーは係名シートD4・E4から参照
-        for val, col in [('=IFERROR(係名!$D$4,"①")', C_NM1),
-                         ('=IFERROR(係名!$E$4,"②")', C_NM2)]:
-            c = ws.cell(row=r_hdr2, column=col, value=val)
-            c.font      = mf(9, True, C_BLACK)
-            c.fill      = fl(C_WHITE)
-            c.alignment = Alignment(horizontal="center", vertical="center")
-            c.border    = bdr
+        # ── ヘッダー2段目（列名）──
+        set_row(ws, r_hdr2, C_KY,  "係",       C_WHITE, mf(9, True, C_BLACK),
+                left=M, right=M, top=T, bottom=T)
+        set_row(ws, r_hdr2, C_SJ1, "場所",     C_WHITE, mf(9, True, C_BLACK),
+                left=M, right=T, top=T, bottom=T)
+        set_row(ws, r_hdr2, C_SJ2, "仕事内容", C_WHITE, mf(9, True, C_BLACK),
+                left=T, right=M, top=T, bottom=T)
+        set_row(ws, r_hdr2, C_NM1, '=IFERROR(係名!$D$4,"①")', C_WHITE, mf(9, True, C_BLACK),
+                left=M, right=T, top=T, bottom=T)
+        set_row(ws, r_hdr2, C_NM2, '=IFERROR(係名!$E$4,"②")', C_WHITE, mf(9, True, C_BLACK),
+                left=T, right=M, top=T, bottom=T)
 
-        # データ行
-        # 係名シート: A列=給食係, B列=そうじ場所, C列=仕事内容, 行4〜4+HALF-1
-        KY_RANGE  = f"係名!$A$4:$A${3+HALF}"
-        SJ1_RANGE = f"係名!$B$4:$B${3+HALF}"
-        SJ2_RANGE = f"係名!$C$4:$C${3+HALF}"
-
+        # ── データ行 ──
         shift = week - 1
         for i in range(HALF):
             row    = r_data0 + i
             row_bg = C_STRIPE if i % 2 == 0 else C_WHITE
+            is_last = (i == HALF - 1)
+            bot = M if is_last else T   # 最終行の下は太線
 
-            # 給食係・掃除係は係名シートから参照
-            for formula, col in [
-                (f"=IFERROR(INDEX({KY_RANGE},{i+1}),\"\")",  C_KY),
-                (f"=IFERROR(INDEX({SJ1_RANGE},{i+1}),\"\")", C_SJ1),
-                (f"=IFERROR(INDEX({SJ2_RANGE},{i+1}),\"\")", C_SJ2),
-            ]:
-                c = ws.cell(row=row, column=col, value=formula)
-                c.font      = mf(10)
-                c.fill      = fl(row_bg)
-                c.alignment = Alignment(horizontal="center", vertical="center")
-                c.border    = bdr
+            # 給食係
+            c = ws.cell(row=row, column=C_KY,
+                        value=f"=IFERROR(INDEX({KY_RANGE},{i+1}),\"\")")
+            c.font = mf(10); c.fill = fl(row_bg)
+            c.alignment = Alignment(horizontal="center", vertical="center")
+            c.border = Border(left=M, right=M, top=T, bottom=bot)
 
+            # そうじ場所
+            c = ws.cell(row=row, column=C_SJ1,
+                        value=f"=IFERROR(INDEX({SJ1_RANGE},{i+1}),\"\")")
+            c.font = mf(10); c.fill = fl(row_bg)
+            c.alignment = Alignment(horizontal="center", vertical="center")
+            c.border = Border(left=M, right=T, top=T, bottom=bot)
+
+            # そうじ仕事
+            c = ws.cell(row=row, column=C_SJ2,
+                        value=f"=IFERROR(INDEX({SJ2_RANGE},{i+1}),\"\")")
+            c.font = mf(10); c.fill = fl(row_bg)
+            c.alignment = Alignment(horizontal="center", vertical="center")
+            c.border = Border(left=T, right=M, top=T, bottom=bot)
+
+            # 名前①
             f1 = f"=IFERROR(INDEX({NM_RANGE},MOD({shift}+{i},{num})+1),\"\")"
+            c = ws.cell(row=row, column=C_NM1, value=f1)
+            c.font = mf(11); c.fill = fl(row_bg)
+            c.alignment = Alignment(horizontal="center", vertical="center")
+            c.border = Border(left=M, right=T, top=T, bottom=bot)
+
+            # 名前②
             f2 = (f"=IFERROR(INDEX({NM_RANGE},MOD({shift}+{HALF}+{i},{num})+1),\"\")"
                   if i < HALF2 else "")
+            c = ws.cell(row=row, column=C_NM2, value=f2)
+            c.font = mf(11); c.fill = fl(row_bg)
+            c.alignment = Alignment(horizontal="center", vertical="center")
+            c.border = Border(left=T, right=M, top=T, bottom=bot)
 
-            for formula, col in [(f1, C_NM1), (f2, C_NM2)]:
-                c = ws.cell(row=row, column=col, value=formula if formula else "")
-                c.font      = mf(11)
-                c.fill      = fl(row_bg)
-                c.alignment = Alignment(horizontal="center", vertical="center")
-                c.border    = bdr
-
+        # 区切り行
         for r in [r_sep1, r_sep2]:
             for ci in range(C_KY, C_NM2 + 1):
-                ws.cell(row=r, column=ci).fill = fl("DDDDDD")
+                ws.cell(row=r, column=ci).fill = fl("E8E8E8")
 
     buf = io.BytesIO()
     wb.save(buf)
