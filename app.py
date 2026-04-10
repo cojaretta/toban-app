@@ -389,16 +389,15 @@ def make_excel(class_name, num, start_week, num_weeks):
         c.font      = mf(13, True, C_BLACK)
         c.fill      = fl(C_WHITE)
         c.alignment = Alignment(horizontal="center", vertical="center")
-        c.border    = Border(left=M, right=M, top=M, bottom=T)
-        # 結合内の各セルに右端・左端の罫線を補完
+        c.border    = Border(left=M, right=M, top=M, bottom=M)
         for col in range(C_KY+1, C_NM2):
-            ws.cell(row=r_title, column=col).border = Border(top=M, bottom=T)
-        ws.cell(row=r_title, column=C_NM2).border = Border(right=M, top=M, bottom=T)
+            ws.cell(row=r_title, column=col).border = Border(top=M, bottom=M)
+        ws.cell(row=r_title, column=C_NM2).border = Border(right=M, top=M, bottom=M)
 
         # ── ヘッダー1段目（グループ名）──
         # 給食当番（単独）
         set_row(ws, r_hdr1, C_KY, "給食当番", C_WHITE, mf(9, True, C_BLACK),
-                left=M, right=M, top=T, bottom=T)
+                left=M, right=M, top=T, bottom=M)
 
         # そうじ当番（C_SJ1〜C_SJ2 結合）
         ws.merge_cells(start_row=r_hdr1, start_column=C_SJ1,
@@ -406,29 +405,29 @@ def make_excel(class_name, num, start_week, num_weeks):
         c = ws.cell(row=r_hdr1, column=C_SJ1, value="そうじ当番")
         c.font = mf(9, True, C_BLACK); c.fill = fl(C_WHITE)
         c.alignment = Alignment(horizontal="center", vertical="center")
-        c.border = Border(left=M, right=T, top=T, bottom=T)
-        ws.cell(row=r_hdr1, column=C_SJ2).border = Border(left=T, right=M, top=T, bottom=T)
+        c.border = Border(left=M, right=T, top=T, bottom=M)
+        ws.cell(row=r_hdr1, column=C_SJ2).border = Border(left=T, right=M, top=T, bottom=M)
 
-        # 名前（C_NM1〜C_NM2 結合）
+        # 名前ヘッダー（C_NM1〜C_NM2）は表示しない・罫線だけ設定
         ws.merge_cells(start_row=r_hdr1, start_column=C_NM1,
                        end_row=r_hdr1,   end_column=C_NM2)
-        c = ws.cell(row=r_hdr1, column=C_NM1, value="名前")
-        c.font = mf(9, True, C_BLACK); c.fill = fl(C_WHITE)
+        c = ws.cell(row=r_hdr1, column=C_NM1, value="")
+        c.font = mf(9); c.fill = fl(C_WHITE)
         c.alignment = Alignment(horizontal="center", vertical="center")
-        c.border = Border(left=M, right=T, top=T, bottom=T)
-        ws.cell(row=r_hdr1, column=C_NM2).border = Border(left=T, right=M, top=T, bottom=T)
+        c.border = Border(left=M, right=T, top=T, bottom=M)
+        ws.cell(row=r_hdr1, column=C_NM2).border = Border(left=T, right=M, top=T, bottom=M)
 
         # ── ヘッダー2段目（列名）──
         set_row(ws, r_hdr2, C_KY,  "係",       C_WHITE, mf(9, True, C_BLACK),
-                left=M, right=M, top=T, bottom=T)
+                left=M, right=M, top=T, bottom=M)
         set_row(ws, r_hdr2, C_SJ1, "場所",     C_WHITE, mf(9, True, C_BLACK),
-                left=M, right=T, top=T, bottom=T)
+                left=M, right=T, top=T, bottom=M)
         set_row(ws, r_hdr2, C_SJ2, "仕事内容", C_WHITE, mf(9, True, C_BLACK),
-                left=T, right=M, top=T, bottom=T)
+                left=T, right=M, top=T, bottom=M)
         set_row(ws, r_hdr2, C_NM1, '=IFERROR(係名!$D$4,"①")', C_WHITE, mf(9, True, C_BLACK),
-                left=M, right=T, top=T, bottom=T)
+                left=M, right=T, top=T, bottom=M)
         set_row(ws, r_hdr2, C_NM2, '=IFERROR(係名!$E$4,"②")', C_WHITE, mf(9, True, C_BLACK),
-                left=T, right=M, top=T, bottom=T)
+                left=T, right=M, top=T, bottom=M)
 
         # ── データ行 ──
         shift = week - 1
