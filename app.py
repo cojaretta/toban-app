@@ -334,7 +334,7 @@ def make_excel(class_name, num, start_week, num_weeks):
     ws.page_margins.top    = 0.8 / 2.54
     ws.page_margins.bottom = 0.8 / 2.54
 
-    NM_RANGE  = f"名前!$B$3:$B${2 + num}"
+    NM_RANGE  = f"名前!$B$4:$B${3 + num}"
     KY_RANGE  = f"係名!$A$4:$A${3+HALF}"
     SJ1_RANGE = f"係名!$B$4:$B${3+HALF}"
     SJ2_RANGE = f"係名!$C$4:$C${3+HALF}"
