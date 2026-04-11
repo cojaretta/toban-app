@@ -241,9 +241,10 @@ def make_excel(class_name, num, start_week, num_weeks):
         c.border = bdr
     ws_ky.row_dimensions[3].height = 22
 
-    # ヒント列
+    # ヒント（F列ではなくG列に、印刷範囲外）
+    ws_ky.column_dimensions["F"].width = 32
     c = ws_ky.cell(row=3, column=6, value="← ①②列のヘッダーを変えたい場合に入力（例：給食当番おやすみ）")
-    c.font = mf(8, color="888888")
+    c.font = mf(8, color="999999")
     c.alignment = Alignment(horizontal="left", vertical="center")
 
     # D4=①デフォルト、E4=②デフォルト
@@ -277,10 +278,11 @@ def make_excel(class_name, num, start_week, num_weeks):
     ws_nm = wb.create_sheet("名前")
     ws_nm.sheet_view.showGridLines = False
     ws_nm.column_dimensions["A"].width = 5
-    ws_nm.column_dimensions["B"].width = 14
+    ws_nm.column_dimensions["B"].width = 16
+    ws_nm.column_dimensions["C"].width = 2   # ダミー列（タイトルのはみ出し防止）
 
     # タイトル行
-    ws_nm.merge_cells("A1:B1")
+    ws_nm.merge_cells("A1:C1")
     c = ws_nm["A1"]
     c.value = f"👤  名前入力　― {class_name}・{num}人 ―"
     c.font  = mf(11, True, "FFFFFF")
@@ -289,7 +291,7 @@ def make_excel(class_name, num, start_week, num_weeks):
     ws_nm.row_dimensions[1].height = 30
 
     # 説明行
-    ws_nm.merge_cells("A2:B2")
+    ws_nm.merge_cells("A2:C2")
     c = ws_nm["A2"]
     c.value = "★ 名前を入力してください"
     c.font  = mf(9, color=C_ACCENT)
@@ -424,10 +426,17 @@ def make_excel(class_name, num, start_week, num_weeks):
                 left=M, right=T, top=T, bottom=M)
         set_row(ws, r_hdr2, C_SJ2, "仕事内容", C_WHITE, mf(9, True, C_BLACK),
                 left=T, right=M, top=T, bottom=M)
-        set_row(ws, r_hdr2, C_NM1, '=IFERROR(係名!$D$4,"①")', C_WHITE, mf(9, True, C_BLACK),
-                left=M, right=T, top=T, bottom=M)
-        set_row(ws, r_hdr2, C_NM2, '=IFERROR(係名!$E$4,"②")', C_WHITE, mf(9, True, C_BLACK),
-                left=T, right=M, top=T, bottom=M)
+        # ①②は長い文字が入っても縮小して全体を表示
+        for val, col, lft, rgt in [
+            ('=IFERROR(係名!$D$4,"①")', C_NM1, M, T),
+            ('=IFERROR(係名!$E$4,"②")', C_NM2, T, M),
+        ]:
+            c = ws.cell(row=r_hdr2, column=col, value=val)
+            c.font      = mf(9, True, C_BLACK)
+            c.fill      = fl(C_WHITE)
+            c.alignment = Alignment(horizontal="center", vertical="center",
+                                    shrink_to_fit=True)
+            c.border    = Border(left=lft, right=rgt, top=T, bottom=M)
 
         # ── データ行 ──
         shift = week - 1
