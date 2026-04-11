@@ -155,7 +155,7 @@ HTML = """
 
   <div class="note">
     <strong>ダウンロード後にExcelで入力するもの</strong><br>
-    ・係名シート：給食当番・そうじ場所・仕事内容を入力（全週に自動反映）<br>
+    ・係名シート：給食当番・そうじ場所・仕事内容を入力<br>
     ・名前シート：名前を入力
   </div>
 </div>
@@ -408,11 +408,11 @@ def make_excel(class_name, num, start_week, num_weeks):
         c.border = Border(left=M, right=T, top=T, bottom=M)
         ws.cell(row=r_hdr1, column=C_SJ2).border = Border(left=T, right=M, top=T, bottom=M)
 
-        # 名前ヘッダー（C_NM1〜C_NM2）は表示しない・罫線だけ設定
+        # 名前ヘッダー（C_NM1〜C_NM2 結合）
         ws.merge_cells(start_row=r_hdr1, start_column=C_NM1,
                        end_row=r_hdr1,   end_column=C_NM2)
-        c = ws.cell(row=r_hdr1, column=C_NM1, value="")
-        c.font = mf(9); c.fill = fl(C_WHITE)
+        c = ws.cell(row=r_hdr1, column=C_NM1, value="名前")
+        c.font = mf(9, True, C_BLACK); c.fill = fl(C_WHITE)
         c.alignment = Alignment(horizontal="center", vertical="center")
         c.border = Border(left=M, right=T, top=T, bottom=M)
         ws.cell(row=r_hdr1, column=C_NM2).border = Border(left=T, right=M, top=T, bottom=M)
