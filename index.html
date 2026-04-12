@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>給食・そうじ当番表メーカー</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Meiryo", "メイリオ", sans-serif;
+    background: #f0f4f8;
+    min-height: 100vh;
+    color: #1a2a3a;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1a3a5c 0%, #2563a8 60%, #3b82c4 100%);
+    color: white;
+    padding: 28px 40px 24px;
+    box-shadow: 0 4px 20px rgba(26,58,92,0.25);
+  }
+  header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  header p {
+    font-size: 12px;
+    opacity: 0.75;
+    letter-spacing: 0.05em;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 36px auto;
+    padding: 0 20px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 16px rgba(26,58,92,0.10);
+    padding: 32px 36px;
+    margin-bottom: 24px;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a3a5c;
+    letter-spacing: 0.06em;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #dbe8f6;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 18px;
+    background: linear-gradient(180deg, #2563a8, #3b82c4);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 24px;
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .form-group.full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #2563a8;
+    letter-spacing: 0.04em;
+  }
+  input[type="text"], input[type="number"] {
+    font-family: "Meiryo", sans-serif;
+    font-size: 14px;
+    padding: 10px 14px;
+    border: 1.5px solid #ccd9e8;
+    border-radius: 8px;
+    color: #1a2a3a;
+    background: #f7fafd;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  input:focus {
+    border-color: #2563a8;
+    box-shadow: 0 0 0 3px rgba(37,99,168,0.12);
+    background: white;
+  }
+
+  .hint {
+    font-size: 11px;
+    color: #6b8aaa;
+    margin-top: 2px;
+  }
+
+  .btn-generate {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #1a3a5c 0%, #2563a8 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: "Meiryo", sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 4px 16px rgba(37,99,168,0.30);
+  }
+  .btn-generate:hover {
+    opacity: 0.92;
+    box-shadow: 0 6px 22px rgba(37,99,168,0.38);
+    transform: translateY(-1px);
+  }
+  .btn-generate:active { transform: translateY(0); }
+
+  .info-box {
+    background: #eef4fb;
+    border: 1px solid #c5d9ee;
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 12px;
+    color: #2563a8;
+    line-height: 1.7;
+    margin-top: 16px;
+  }
+  .info-box b { color: #1a3a5c; }
+
+  .sheet-tag {
+    display: inline-block;
+    background: #2563a8;
+    color: white;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    margin: 0 2px;
+    vertical-align: middle;
+  }
+  .sheet-tag.green { background: #2a7a4a; }
+  .sheet-tag.mono  { background: #555; }
+
+  @media (max-width: 500px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .card { padding: 22px 18px; }
+    header { padding: 20px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📋 給食・そうじ当番表メーカー</h1>
+  <p style="margin-bottom:10px; opacity:0.85; font-size:13px; line-height:1.7;">
+    クラス情報を入力してExcelをダウンロード。印刷した当番表を週めくりカレンダーのように使えます。
+  </p>
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:4px;">
+    <span style="display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.13); border:1px solid rgba(255,255,255,0.25); border-radius:20px; padding:5px 13px; font-size:11px; letter-spacing:0.04em;">
+      🔒 名前はExcelに直接入力 — サーバーに送信しません
+    </span>
+    <span style="display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.13); border:1px solid rgba(255,255,255,0.25); border-radius:20px; padding:5px 13px; font-size:11px; letter-spacing:0.04em;">
+      📅 1週1ページで印刷 → 週めくりで使えます
+    </span>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <div class="card-title">基本設定</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>クラス名</label>
+        <input type="text" id="className" placeholder="例：3年2組" value="3年2組">
+      </div>
+      <div class="form-group">
+        <label>人数</label>
+        <input type="number" id="numStudents" min="1" max="60" value="30">
+        <span class="hint">奇数のとき①が1人多くなります</span>
+      </div>
+      <div class="form-group">
+        <label>開始週（何週目から）</label>
+        <input type="number" id="startWeek" min="1" max="52" value="1">
+        <span class="hint">第〇週スタート</span>
+      </div>
+      <div class="form-group">
+        <label>作成する週数</label>
+        <input type="number" id="numWeeks" min="1" max="52" value="10">
+        <span class="hint">1〜52週</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Excelに含まれるシートについて</div>
+    <div class="info-box">
+      ダウンロードされるExcelには以下の3シートが入っています：<br><br>
+      <b><span class="sheet-tag">係名</span></b>　給食当番・そうじ場所・仕事内容・①②列の見出しを入力するシート。入力した内容が当番表全週に自動反映されます。<br><br>
+      <b><span class="sheet-tag green">名前</span></b>　①列・②列に児童の名前を入力するシート。当番表の名前シフトに使われます。<br><br>
+      <b><span class="sheet-tag mono">当番表</span></b>　1週1ページ（A4印刷用）・モノクロの当番表。週ごとに名前が1人ずつシフトします。
+    </div>
+
+    <div class="info-box" style="background:#fff8ec; border-color:#f0d080; color:#5a4000; margin-top:12px;">
+      💡 <b>係名シートを入力するときのコツ</b><br>
+      名前は週ごとに1行ずつシフトするため、<b>同じそうじ場所を連続して並べると、特定の子がずっと同じ場所を担当し続けます。</b>
+      給食係・そうじ場所はあえてバラバラに並べるのがおすすめです。
+    </div>
+  </div>
+
+  <button class="btn-generate" onclick="generateExcel()">📥 Excelをダウンロード</button>
+
+</div>
+
+<script>
+// ======================================================
+// Excel生成メイン
+// ======================================================
+function generateExcel() {
+  const className  = document.getElementById('className').value.trim()  || 'クラス名';
+  const numStudents= parseInt(document.getElementById('numStudents').value) || 30;
+  const startWeek  = parseInt(document.getElementById('startWeek').value)  || 1;
+  const numWeeks   = parseInt(document.getElementById('numWeeks').value)   || 10;
+
+  // 人数を①②列に分配（奇数なら①が1人多い）
+  const col1Count = Math.ceil(numStudents / 2);
+  const col2Count = Math.floor(numStudents / 2);
+
+  const wb = XLSX.utils.book_new();
+
+  // ======================================================
+  // シート1: 係名シート
+  // ======================================================
+  const wsRole = makeRoleSheet(col1Count, col2Count);
+  XLSX.utils.book_append_sheet(wb, wsRole, '係名');
+
+  // ======================================================
+  // シート2: 名前シート
+  // ======================================================
+  const wsNames = makeNamesSheet(col1Count, col2Count);
+  XLSX.utils.book_append_sheet(wb, wsNames, '名前');
+
+  // ======================================================
+  // シート3: 当番表シート（全週）
+  // ======================================================
+  const wsSchedule = makeScheduleSheet(className, numStudents, col1Count, col2Count, startWeek, numWeeks);
+  XLSX.utils.book_append_sheet(wb, wsSchedule, '当番表');
+
+  // ダウンロード
+  const safeClass = className.replace(/[\\/:*?"<>|]/g, '_');
+  XLSX.writeFile(wb, `当番表_${safeClass}.xlsx`);
+}
+
+// ======================================================
+// ヘルパー: セルスタイル生成
+// ======================================================
+function blueCell(text, bold, sz, fgHex, bgHex, hAlign, vAlign, wrapText) {
+  return {
+    v: text ?? '',
+    t: typeof text === 'number' ? 'n' : 's',
+    s: {
+      font:      { name: 'Meiryo', bold: bold||false, sz: sz||10, color: { rgb: fgHex||'000000' } },
+      fill:      bgHex ? { patternType: 'solid', fgColor: { rgb: bgHex } } : undefined,
+      alignment: { horizontal: hAlign||'center', vertical: vAlign||'center', wrapText: wrapText||false },
+      border: {
+        top:    { style: 'thin', color: { rgb: 'AAAAAA' } },
+        bottom: { style: 'thin', color: { rgb: 'AAAAAA' } },
+        left:   { style: 'thin', color: { rgb: 'AAAAAA' } },
+        right:  { style: 'thin', color: { rgb: 'AAAAAA' } },
+      }
+    }
+  };
+}
+
+function monoCell(text, bold, sz, bgHex, hAlign, wrapText, thick) {
+  const borderColor = thick ? '222222' : '888888';
+  const borderStyle = thick ? 'medium' : 'thin';
+  return {
+    v: text ?? '',
+    t: 's',
+    s: {
+      font:      { name: 'Meiryo', bold: bold||false, sz: sz||9, color: { rgb: '111111' } },
+      fill:      bgHex ? { patternType: 'solid', fgColor: { rgb: bgHex } } : undefined,
+      alignment: { horizontal: hAlign||'center', vertical: vAlign||'center', wrapText: wrapText||false },
+      border: {
+        top:    { style: borderStyle, color: { rgb: borderColor } },
+        bottom: { style: borderStyle, color: { rgb: borderColor } },
+        left:   { style: borderStyle, color: { rgb: borderColor } },
+        right:  { style: borderStyle, color: { rgb: borderColor } },
+      }
+    }
+  };
+}
+
+// セルアドレス
+function addr(r, c) {
+  const col = colLetter(c);
+  return col + r;
+}
+function colLetter(c) {
+  let s = '';
+  c += 1; // 0-indexed to 1-indexed
+  while (c > 0) {
+    let r = (c - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    c = Math.floor((c - 1) / 26);
+  }
+  return s;
+}
+
+// merges配列にプッシュ
+function merge(merges, r1, c1, r2, c2) {
+  merges.push({ s: { r: r1, c: c1 }, e: { r: r2, c: c2 } });
+}
+
+// ======================================================
+// シート1: 係名シート
+// ======================================================
+function makeRoleSheet(col1Count, col2Count) {
+  const ws = {};
+  const merges = [];
+  const rows   = [];
+
+  // 青グラデーション系パレット
+  const BG_HEADER  = '1A3A5C';
+  const BG_SUB     = '2563A8';
+  const BG_ROW1    = 'EEF4FB';
+  const BG_ROW2    = 'DBEAF7';
+  const BG_KYUSHOKU= 'C5D9EE';
+  const BG_SOUJI   = 'D6E8F5';
+  const FG_WHITE   = 'FFFFFF';
+
+  let r = 0;
+
+  // タイトル行
+  ws[addr(r,0)] = blueCell('係名シート　― ここに入力した内容が当番表に反映されます ―', true, 11, FG_WHITE, BG_HEADER, 'center', 'center', false);
+  merge(merges, r, 0, r, 5);
+  r++;
+
+  // 注釈
+  ws[addr(r,0)] = blueCell('※ 給食当番と①②列ヘッダーは給食用、そうじ場所・仕事内容はそうじ当番用です', false, 9, '2563A8', BG_ROW1, 'left', 'center', false);
+  merge(merges, r, 0, r, 5);
+  r++;
+
+  // ---- 給食当番セクション ----
+  ws[addr(r,0)] = blueCell('【給食当番】', true, 10, FG_WHITE, BG_SUB, 'center', 'center', false);
+  merge(merges, r, 0, r, 5);
+  r++;
+
+  // ヘッダー行
+  const gkyushokuHeaders = ['No.', '給食当番の係名', '①列ヘッダー名', '②列ヘッダー名', '備考', ''];
+  gkyushokuHeaders.forEach((h, c) => {
+    ws[addr(r,c)] = blueCell(h, true, 9, FG_WHITE, BG_HEADER, 'center', 'center', false);
+  });
+  r++;
+
+  // 給食当番の入力行（10行）
+  for (let i = 1; i <= 10; i++) {
+    const bg = i % 2 === 1 ? BG_ROW1 : BG_ROW2;
+    ws[addr(r,0)] = blueCell(i, false, 9, '1A3A5C', bg, 'center', 'center', false);
+    ws[addr(r,1)] = blueCell('', false, 10, '000000', bg, 'left', 'center', false);
+    ws[addr(r,2)] = blueCell('名前', false, 9, '666666', bg, 'center', 'center', false);
+    ws[addr(r,3)] = blueCell('名前', false, 9, '666666', bg, 'center', 'center', false);
+    ws[addr(r,4)] = blueCell('', false, 9, '000000', bg, 'left', 'center', false);
+    ws[addr(r,5)] = blueCell('', false, 9, '000000', bg, 'left', 'center', false);
+    r++;
+  }
+
+  r++; // 空行
+
+  // ---- そうじ当番セクション ----
+  ws[addr(r,0)] = blueCell('【そうじ当番】', true, 10, FG_WHITE, BG_SUB, 'center', 'center', false);
+  merge(merges, r, 0, r, 5);
+  r++;
+
+  // ヘッダー
+  const soujiHeaders = ['No.', 'そうじ場所', '仕事内容①', '仕事内容②', '仕事内容③', '備考'];
+  soujiHeaders.forEach((h, c) => {
+    ws[addr(r,c)] = blueCell(h, true, 9, FG_WHITE, BG_HEADER, 'center', 'center', false);
+  });
+  r++;
+
+  // そうじ場所の入力行（15行）
+  for (let i = 1; i <= 15; i++) {
+    const bg = i % 2 === 1 ? BG_ROW1 : BG_ROW2;
+    ws[addr(r,0)] = blueCell(i, false, 9, '1A3A5C', bg, 'center', 'center', false);
+    for (let c = 1; c <= 5; c++) {
+      ws[addr(r,c)] = blueCell('', false, 10, '000000', bg, 'left', 'center', false);
+    }
+    r++;
+  }
+
+  // 列幅
+  ws['!cols'] = [
+    { wch: 5 },  // No
+    { wch: 20 }, // 係名/場所
+    { wch: 14 }, // ①
+    { wch: 14 }, // ②
+    { wch: 20 }, // 仕事③/備考
+    { wch: 16 }, // 備考
+  ];
+
+  ws['!merges'] = merges;
+  ws['!ref'] = addr(0,0) + ':' + addr(r-1, 5);
+  return ws;
+}
+
+// ======================================================
+// シート2: 名前シート
+// ======================================================
+function makeNamesSheet(col1Count, col2Count) {
+  const ws = {};
+  const merges = [];
+
+  const BG_HEADER = '1A3A5C';
+  const BG_SUB1   = '2563A8';
+  const BG_SUB2   = '3B82C4';
+  const BG_ROW1   = 'EEF4FB';
+  const BG_ROW2   = 'DBEAF7';
+  const FG_WHITE  = 'FFFFFF';
+
+  let r = 0;
+
+  // タイトル
+  ws[addr(r,0)] = blueCell('名前シート　― ①列・②列に名前を入力してください ―', true, 11, FG_WHITE, BG_HEADER, 'center', 'center', false);
+  merge(merges, r, 0, r, 3);
+  r++;
+
+  // 注釈
+  ws[addr(r,0)] = blueCell(`① ${col1Count}人　② ${col2Count}人　（計 ${col1Count + col2Count}人）　― 奇数人数のとき①が1人多い ―`, false, 9, '2563A8', 'C5D9EE', 'left', 'center', false);
+  merge(merges, r, 0, r, 3);
+  r++;
+
+  // ヘッダー
+  ws[addr(r,0)] = blueCell('No.', true, 9, FG_WHITE, BG_HEADER, 'center', 'center', false);
+  ws[addr(r,1)] = blueCell('①列（名前）', true, 9, FG_WHITE, BG_SUB1, 'center', 'center', false);
+  ws[addr(r,2)] = blueCell('No.', true, 9, FG_WHITE, BG_HEADER, 'center', 'center', false);
+  ws[addr(r,3)] = blueCell('②列（名前）', true, 9, FG_WHITE, BG_SUB2, 'center', 'center', false);
+  r++;
+
+  const maxRows = Math.max(col1Count, col2Count);
+  for (let i = 0; i < maxRows; i++) {
+    const bg = i % 2 === 0 ? BG_ROW1 : BG_ROW2;
+    // ①列
+    ws[addr(r,0)] = blueCell(i+1, false, 9, '1A3A5C', bg, 'center', 'center', false);
+    ws[addr(r,1)] = blueCell('', false, 11, '000000', bg, 'left', 'center', false);
+    // ②列
+    if (i < col2Count) {
+      ws[addr(r,2)] = blueCell(col1Count + i + 1, false, 9, '1A3A5C', bg, 'center', 'center', false);
+      ws[addr(r,3)] = blueCell('', false, 11, '000000', bg, 'left', 'center', false);
+    } else {
+      ws[addr(r,2)] = blueCell('', false, 9, '000000', 'F0F0F0', 'center', 'center', false);
+      ws[addr(r,3)] = blueCell('（なし）', false, 9, 'AAAAAA', 'F0F0F0', 'center', 'center', false);
+    }
+    r++;
+  }
+
+  ws['!cols'] = [
+    { wch: 5 },
+    { wch: 18 },
+    { wch: 5 },
+    { wch: 18 },
+  ];
+  ws['!merges'] = merges;
+  ws['!ref'] = addr(0,0) + ':' + addr(r-1, 3);
+  return ws;
+}
+
+// ======================================================
+// シート3: 当番表シート（全週、1週1ページ）
+// ======================================================
+function makeScheduleSheet(className, numStudents, col1Count, col2Count, startWeek, numWeeks) {
+  const ws = {};
+  const merges = [];
+
+  // モノクロパレット
+  const BG_TITLE   = '222222';
+  const BG_WEEK    = '444444';
+  const BG_KYUSHOKU= 'CCCCCC';
+  const BG_SOUJI   = 'E8E8E8';
+  const BG_HEAD    = '888888';
+  const BG_NAMEH   = 'BBBBBB';
+  const BG_NAME1   = 'FFFFFF';
+  const BG_NAME2   = 'F2F2F2';
+  const FG_WHITE   = 'FFFFFF';
+  const FG_BLACK   = '111111';
+
+  // 1ページあたりの行数（A4で収まるよう当番表ブロックを設計）
+  // 各週のブロック構造:
+  //   行0: タイトル（クラス名・第〇週）
+  //   行1: 空白
+  //   行2: [給食当番] ヘッダー
+  //   行3: ヘッダー行（係名 | ① | ②）
+  //   行4〜13: 給食当番10行（係名シートから参照する注釈付き）
+  //   行14: 空白
+  //   行15: [そうじ当番] ヘッダー
+  //   行16: ヘッダー行
+  //   行17〜31: そうじ15行
+  //   行32: 注記
+  //   行33: 空白（印刷改ページ用）
+  // → 1週=34行
+
+  const ROWS_PER_WEEK = 34;
+  // 列: A=係名(20), B=①ヘッダー(10), C=名前①(18), D=②ヘッダー(10), E=名前②(18)
+  // → 6列 (0〜5)
+
+  // 全週生成
+  for (let w = 0; w < numWeeks; w++) {
+    const weekNo = startWeek + w;
+    const baseRow = w * ROWS_PER_WEEK;
+
+    // シフトオフセット（1週ごとに1人ずつずれる）
+    const shift1 = w % col1Count;       // ①列オフセット
+    const shift2 = col2Count > 0 ? w % col2Count : 0; // ②列オフセット
+
+    const R = (rel) => baseRow + rel; // 絶対行番号
+
+    // --- タイトル行 ---
+    ws[addr(R(0),0)] = monoCell(`${className}　第${weekNo}週　給食・そうじ当番表`, true, 13, BG_TITLE, 'center', false, true);
+    merge(merges, R(0), 0, R(0), 5);
+
+    // --- 給食当番ヘッダー ---
+    ws[addr(R(2),0)] = monoCell('【給食当番】', true, 10, BG_WEEK, 'left', false, true);
+    merge(merges, R(2), 0, R(2), 5);
+
+    // 列見出し（給食）
+    ws[addr(R(3),0)] = monoCell('係　名', true, 9, BG_HEAD, 'center', false, true);
+    ws[addr(R(3),1)] = monoCell('①', true, 9, BG_HEAD, 'center', false, true);
+    ws[addr(R(3),2)] = monoCell('名　前', true, 9, BG_HEAD, 'center', false, true);
+    ws[addr(R(3),3)] = monoCell('②', true, 9, BG_HEAD, 'center', false, true);
+    ws[addr(R(3),4)] = monoCell('名　前', true, 9, BG_HEAD, 'center', false, true);
+    ws[addr(R(3),5)] = monoCell('', true, 9, BG_HEAD, 'center', false, true);
+    merge(merges, R(3), 4, R(3), 5);
+
+    // 給食当番10行（係名シートのB列参照）
+    for (let i = 0; i < 10; i++) {
+      const rr = R(4 + i);
+      const bg = i % 2 === 0 ? BG_NAME1 : BG_NAME2;
+      const roleRef = `='係名'!B${5+i}`;    // 係名シートのB列（給食当番名）
+      const h1Ref   = `='係名'!C${5+i}`;    // ①ヘッダー
+      const h2Ref   = `='係名'!D${5+i}`;    // ②ヘッダー
+
+      // 係名（参照式）
+      ws[addr(rr,0)] = makeFormulaCell(roleRef, false, 10, bg, 'left', true);
+      // ①ヘッダー
+      ws[addr(rr,1)] = makeFormulaCell(h1Ref, false, 9, BG_NAMEH, 'center', false);
+      // ①名前（名前シートからシフト参照）
+      const idx1a = ((shift1 + i * 2    ) % col1Count);
+      const idx1b = ((shift1 + i * 2 + 1) % col1Count);
+      const name1a = `='名前'!B${4 + idx1a}`;
+      ws[addr(rr,2)] = makeFormulaCell(name1a, false, 10, bg, 'center', false);
+      // ②ヘッダー
+      ws[addr(rr,3)] = makeFormulaCell(h2Ref, false, 9, BG_NAMEH, 'center', false);
+      // ②名前
+      if (col2Count > 0) {
+        const idx2a = ((shift2 + i * 2    ) % col2Count);
+        const name2a = `='名前'!D${4 + idx2a}`;
+        ws[addr(rr,4)] = makeFormulaCell(name2a, false, 10, bg, 'center', false);
+      } else {
+        ws[addr(rr,4)] = monoCell('', false, 10, bg, 'center', false, false);
+      }
+      ws[addr(rr,5)] = monoCell('', false, 9, bg, 'center', false, false);
+      merge(merges, rr, 4, rr, 5);
+    }
+
+    // --- そうじ当番ヘッダー ---
+    ws[addr(R(14),0)] = monoCell('', false, 9, 'FFFFFF', 'center', false, false);
+    merge(merges, R(14), 0, R(14), 5);
+
+    ws[addr(R(15),0)] = monoCell('【そうじ当番】', true, 10, BG_WEEK, 'left', false, true);
+    merge(merges, R(15), 0, R(15), 5);
+
+    // 列見出し（そうじ）
+    ws[addr(R(16),0)] = monoCell('そうじ場所', true, 9, BG_HEAD, 'center', false, true);
+    ws[addr(R(16),1)] = monoCell('①', true, 9, BG_HEAD, 'center', false, true);
+    ws[addr(R(16),2)] = monoCell('名　前', true, 9, BG_HEAD, 'center', false, true);
+    ws[addr(R(16),3)] = monoCell('②', true, 9, BG_HEAD, 'center', false, true);
+    ws[addr(R(16),4)] = monoCell('名　前', true, 9, BG_HEAD, 'center', false, true);
+    ws[addr(R(16),5)] = monoCell('仕事内容', true, 9, BG_HEAD, 'center', false, true);
+
+    // そうじ当番15行
+    // 係名シートのそうじ場所: B18〜B32、仕事内容①C、②D、③E
+    const SOUJI_START_ROW = 18;
+    for (let i = 0; i < 15; i++) {
+      const rr = R(17 + i);
+      const bg = i % 2 === 0 ? BG_NAME1 : BG_NAME2;
+      const sr = SOUJI_START_ROW + i;
+
+      // そうじ場所（係名!B列）
+      ws[addr(rr,0)] = makeFormulaCell(`='係名'!B${sr}`, false, 10, bg, 'left', true);
+      // ①（固定ラベル「①」または係名シートC列活用）
+      ws[addr(rr,1)] = monoCell('①', false, 9, BG_NAMEH, 'center', false, false);
+      // ①名前
+      const sidx1 = ((shift1 + i) % col1Count);
+      ws[addr(rr,2)] = makeFormulaCell(`='名前'!B${4 + sidx1}`, false, 10, bg, 'center', false);
+      // ②
+      if (col2Count > 0) {
+        ws[addr(rr,3)] = monoCell('②', false, 9, BG_NAMEH, 'center', false, false);
+        const sidx2 = ((shift2 + i) % col2Count);
+        ws[addr(rr,4)] = makeFormulaCell(`='名前'!D${4 + sidx2}`, false, 10, bg, 'center', false);
+      } else {
+        ws[addr(rr,3)] = monoCell('', false, 9, BG_NAMEH, 'center', false, false);
+        ws[addr(rr,4)] = monoCell('', false, 10, bg, 'center', false, false);
+      }
+      // 仕事内容（係名シートC列）
+      ws[addr(rr,5)] = makeFormulaCell(`='係名'!C${sr}`, false, 9, bg, 'left', true);
+    }
+
+    // 注記行
+    ws[addr(R(32),0)] = monoCell('※「係名」シート・「名前」シートを編集すると当番表に自動反映されます', false, 8, 'F8F8F8', 'left', false, false);
+    merge(merges, R(32), 0, R(32), 5);
+
+    // 改ページ区切り（最終週以外）
+    if (w < numWeeks - 1) {
+      ws[addr(R(33),0)] = monoCell('', false, 9, 'FFFFFF', 'center', false, false);
+      merge(merges, R(33), 0, R(33), 5);
+    }
+  }
+
+  // 列幅設定
+  ws['!cols'] = [
+    { wch: 18 }, // 係名/そうじ場所
+    { wch: 5  }, // ①
+    { wch: 16 }, // 名前①
+    { wch: 5  }, // ②
+    { wch: 16 }, // 名前②
+    { wch: 18 }, // 仕事内容
+  ];
+
+  // 印刷設定（A4縦）
+  ws['!pageSetup'] = {
+    paperSize: 9,       // A4
+    orientation: 'portrait',
+    fitToPage: true,
+    fitToHeight: 1,
+    fitToWidth: 1,
+  };
+
+  // 改ページを各週の末尾に設定
+  const rowBreaks = [];
+  for (let w = 0; w < numWeeks - 1; w++) {
+    rowBreaks.push({ man: true, max: 16383, min: 0, id: (w + 1) * ROWS_PER_WEEK - 1 });
+  }
+  if (rowBreaks.length > 0) ws['!rowBreaks'] = rowBreaks;
+
+  ws['!merges'] = merges;
+  const lastRow = numWeeks * ROWS_PER_WEEK - 1;
+  ws['!ref'] = addr(0,0) + ':' + addr(lastRow, 5);
+  return ws;
+}
+
+// 数式セル生成ヘルパー
+function makeFormulaCell(formula, bold, sz, bgHex, hAlign, wrapText) {
+  return {
+    f: formula.startsWith('=') ? formula.slice(1) : formula,
+    t: 'str',
+    s: {
+      font:      { name: 'Meiryo', bold: bold||false, sz: sz||10, color: { rgb: '111111' } },
+      fill:      bgHex ? { patternType: 'solid', fgColor: { rgb: bgHex } } : undefined,
+      alignment: { horizontal: hAlign||'left', vertical: 'center', wrapText: wrapText||false },
+      border: {
+        top:    { style: 'thin', color: { rgb: '888888' } },
+        bottom: { style: 'thin', color: { rgb: '888888' } },
+        left:   { style: 'thin', color: { rgb: '888888' } },
+        right:  { style: 'thin', color: { rgb: '888888' } },
+      }
+    }
+  };
+}
+</script>
+</body>
+</html>
