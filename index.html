@@ -299,7 +299,7 @@ function monoCell(text, bold, sz, bgHex, hAlign, wrapText, thick) {
     s: {
       font:      { name: 'Meiryo', bold: bold||false, sz: sz||9, color: { rgb: '111111' } },
       fill:      bgHex ? { patternType: 'solid', fgColor: { rgb: bgHex } } : undefined,
-      alignment: { horizontal: hAlign||'center', vertical: vAlign||'center', wrapText: wrapText||false },
+      alignment: { horizontal: hAlign||'center', vertical: 'center', wrapText: wrapText||false },
       border: {
         top:    { style: borderStyle, color: { rgb: borderColor } },
         bottom: { style: borderStyle, color: { rgb: borderColor } },
